@@ -31,25 +31,28 @@ fn mediaplayer() -> MediaPlayer {
     return mdp;
 }
 
-fn main() {
+fn init_ncurses() {
     initscr();
     raw();
     keypad(stdscr(), true);
     noecho();
+}
+
+fn main() {
+    init_ncurses();
     addstr(help());
-
     let mdp = mediaplayer();
-
     loop {
         match controller::handle_char(&mdp, getch()) {
             Response::Stop => {
                 break;
             }
             Response::Continue => (),
+            Response::Print(x) => {
+                addstr(&x);
+                ();
+            }
         }
     }
-
-    refresh();
-
     endwin();
 }

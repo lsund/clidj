@@ -1,11 +1,11 @@
 extern crate vlc;
-use ncurses::*;
 use std::fs;
 use vlc::MediaPlayer;
 
 pub enum Response {
     Continue,
     Stop,
+    Print(String),
 }
 
 enum Key {
@@ -65,25 +65,23 @@ pub fn handle_char(mdp: &MediaPlayer, ch_: i32) -> Response {
             resp = Response::Stop;
         }
         Key::S => {
-            addstr("playing\n");
+            resp = Response::Print("playing\n".to_owned());
             play(&mdp);
         }
         Key::L => {
             let s = list();
-            addstr("Library: \n");
-            addstr(&s);
-            addstr("\n");
+            resp = Response::Print(format!("Library: \n{}\n", &s));
         }
         Key::LessThan => {
             let rate = speed_down(&mdp);
-            addstr(&format!("{:.*}\n", 2, rate,));
+            resp = Response::Print(format!("{:.*}\n", 2, rate,));
         }
         Key::GreaterThan => {
             let rate = speed_up(&mdp);
-            addstr(&format!("{:.*}\n", 2, rate,));
+            resp = Response::Print(format!("{:.*}\n", 2, rate,));
         }
         _ => {
-            addstr("press 'q' to quit\n");
+            Response::Print("press 'q' to quit\n".to_owned());
         }
     }
     return resp;
