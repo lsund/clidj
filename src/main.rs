@@ -4,7 +4,6 @@ extern crate vlc;
 mod controller;
 
 use ncurses::*;
-// use std::thread;
 use vlc::{Instance, Media, MediaPlayer};
 
 use controller::Response;
@@ -12,6 +11,7 @@ use controller::Response;
 fn help() -> &'static str {
     return "
 s: play music
+p: pause music
 l: list library
 q: quit
 <: slow down
@@ -47,10 +47,9 @@ fn main() {
             Response::Stop => {
                 break;
             }
-            Response::Continue => (),
+            Response::Continue => {}
             Response::Print(x) => {
                 addstr(&x);
-                ();
             }
         }
     }
