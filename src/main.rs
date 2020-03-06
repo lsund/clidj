@@ -6,6 +6,26 @@ use ncurses::*;
 use std::fs;
 use vlc::{Instance, Media, MediaPlayer};
 
+enum Key {
+    S,
+    L,
+    Q,
+    GreaterThan,
+    LessThan,
+    Unknown,
+}
+
+fn int_to_key(x: i32) -> Key {
+    match x {
+        115 => Key::S,
+        108 => Key::L,
+        113 => Key::Q,
+        62 => Key::GreaterThan,
+        60 => Key::LessThan,
+        _ => Key::Unknown,
+    }
+}
+
 fn help() -> &'static str {
     return "
 s: play music
@@ -46,26 +66,33 @@ fn list() -> String {
 }
 
 fn handle_char(mdp: &MediaPlayer, ch_: i32) -> bool {
-    let ch = keyname(ch_).unwrap();
+    let ch = int_to_key(ch_);
     let mut quit = false;
-    if ch == "q" {
-        quit = true;
-    } else if ch == "s" {
-        addstr("playing\n");
-        play(&mdp);
-    } else if ch == "l" {
-        let s = list();
-        addstr("Library: \n");
-        addstr(&s);
-        addstr("\n");
-    } else if ch == "<" {
-        let rate = speed_down(&mdp);
-        addstr(&format!("{:.*}\n", 2, rate,));
-    } else if ch == ">" {
-        let rate = speed_up(&mdp);
-        addstr(&format!("{:.*}\n", 2, rate,));
-    } else {
-        addstr("press 'q' to quit\n");
+    match ch {
+        Key::Q => {
+            quit = true;
+        }
+        Key::S => {
+            addstr("playing\n");
+            play(&mdp);
+        }
+        Key::L => {
+            let s = list();
+            addstr("Library: \n");
+            addstr(&s);
+            addstr("\n");
+        }
+        Key::LessThan => {
+            let rate = speed_down(&mdp);
+            addstr(&format!("{:.*}\n", 2, rate,));
+        }
+        Key::GreaterThan => {
+            let rate = speed_up(&mdp);
+            addstr(&format!("{:.*}\n", 2, rate,));
+        }
+        _ => {
+            addstr("press 'q' to quit\n");
+        }
     }
     return quit;
 }
