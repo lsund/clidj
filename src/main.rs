@@ -2,7 +2,7 @@ extern crate ncurses;
 extern crate vlc;
 
 use ncurses::*;
-use std::thread;
+// use std::thread;
 use vlc::{Instance, Media, MediaPlayer};
 
 fn play_music(mdp: &MediaPlayer) {
@@ -25,30 +25,25 @@ fn main() {
     raw();
     keypad(stdscr(), true);
     noecho();
-    addstr("Press Play.");
+    addstr("Press 's' to play music.\n");
 
-    let ch = getch();
-    if ch == KEY_F1 {
-        /* Enable attributes and output message. */
-        attron(A_BOLD() | A_BLINK());
-        addstr("\nF1");
-        attroff(A_BOLD() | A_BLINK());
-        addstr(" pressed");
-    } else {
-        /* Enable attributes and output message. */
-        addstr("\nKey pressed: ");
-        attron(A_BOLD() | A_BLINK());
-        addstr(format!("{}\n", ch).as_ref());
-        attroff(A_BOLD() | A_BLINK());
+    let mut ch: String = keyname(getch()).unwrap();
+
+    loop {
+        if ch == "q" {
+            break;
+        } else if ch == "s" {
+            addstr(&format!("{} playing\n", &ch));
+            play_music(&mdp);
+        } else {
+            addstr(&format!("Press 'q' to quit.\n"));
+        }
+        ch = keyname(getch()).unwrap();
     }
 
     refresh();
 
-    getch();
-
-    play_music(&mdp);
-
     endwin();
 
-    thread::sleep(::std::time::Duration::from_secs(360));
+    // thread::sleep(::std::time::Duration::from_secs(360));
 }
