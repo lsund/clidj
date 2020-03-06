@@ -3,20 +3,24 @@ extern crate vlc;
 
 mod controller;
 
+static PROMPT_HISTORY_SIZE: usize = 5;
+
 use ncurses::*;
 use vlc::{Instance, Media, MediaPlayer};
 
 use controller::Response;
 
-fn help() -> &'static str {
-    return "
+fn display_help() {
+    addstr(
+        "
 s: play music
 p: pause music
 l: list library
 q: quit
 <: slow down
 >: speed up
-";
+",
+    );
 }
 
 fn mediaplayer() -> MediaPlayer {
@@ -40,8 +44,10 @@ fn init_ncurses() {
 
 fn main() {
     init_ncurses();
-    addstr(help());
+    display_help();
     let mdp = mediaplayer();
+    let mut vec = Vec::new();
+    let mut max_len = 0;
     loop {
         match controller::handle_char(&mdp, getch()) {
             Response::Stop => {
@@ -50,7 +56,20 @@ fn main() {
             Response::Continue => {}
             Response::Print(x) => {
                 addstr(&x);
+                vec.push(x);
+                max_len += 1;
             }
+            Response::Refresh => {
+                clear();
+                display_help();
+            }
+        }
+        clear();
+        display_help();
+        let start_index =
+            vec.len() - std::cmp::min(max_len, PROMPT_HISTORY_SIZE);
+        for x in &vec[start_index..vec.len()] {
+            addstr(&x);
         }
     }
     endwin();

@@ -6,11 +6,12 @@ pub enum Response {
     Continue,
     Stop,
     Print(String),
+    Refresh,
 }
 
 enum Key {
     S,
-    P,
+    R,
     L,
     Q,
     GreaterThan,
@@ -23,7 +24,6 @@ fn play_or_pause(mdp: &MediaPlayer) {
         mdp.pause();
     } else {
         mdp.play().unwrap();
-        let _ = mdp.set_rate(1.0);
     }
 }
 
@@ -54,7 +54,7 @@ fn list() -> String {
 fn to_key(x: i32) -> Key {
     match x {
         115 => Key::S,
-        112 => Key::P,
+        114 => Key::R,
         108 => Key::L,
         113 => Key::Q,
         62 => Key::GreaterThan,
@@ -74,7 +74,9 @@ pub fn handle_char(mdp: &MediaPlayer, ch_: i32) -> Response {
             resp = Response::Print("playing\n".to_owned());
             play_or_pause(&mdp);
         }
-        Key::P => {}
+        Key::R => {
+            resp = Response::Refresh;
+        }
         Key::L => {
             let s = list();
             resp = Response::Print(format!("Library: \n{}\n", &s));
