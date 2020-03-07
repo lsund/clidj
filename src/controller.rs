@@ -1,12 +1,14 @@
 extern crate vlc;
 use std::fs;
-use vlc::MediaPlayer;
 
 pub enum Response {
     Continue,
     Stop,
     Print(String),
     Refresh,
+    PlayOrPause,
+    SpeedDown,
+    SpeedUp,
 }
 
 enum Key {
@@ -17,28 +19,6 @@ enum Key {
     GreaterThan,
     LessThan,
     Unknown,
-}
-
-fn play_or_pause(mdp: &MediaPlayer) {
-    if mdp.is_playing() {
-        mdp.pause();
-    } else {
-        mdp.play().unwrap();
-    }
-}
-
-fn speed_up(mdp: &MediaPlayer) -> f32 {
-    let rate = mdp.get_rate();
-    let rate_ = rate + 0.01;
-    let _ = mdp.set_rate(rate_);
-    return rate_;
-}
-
-fn speed_down(mdp: &MediaPlayer) -> f32 {
-    let rate = mdp.get_rate();
-    let rate_ = rate - 0.01;
-    let _ = mdp.set_rate(rate_);
-    return rate_;
 }
 
 fn list() -> String {
@@ -63,7 +43,7 @@ fn to_key(x: i32) -> Key {
     }
 }
 
-pub fn handle_char(mdp: &MediaPlayer, ch_: i32) -> Response {
+pub fn handle_char(ch_: i32) -> Response {
     let ch = to_key(ch_);
     let mut resp = Response::Continue;
     match ch {
@@ -71,8 +51,7 @@ pub fn handle_char(mdp: &MediaPlayer, ch_: i32) -> Response {
             resp = Response::Stop;
         }
         Key::S => {
-            resp = Response::Print("playing\n".to_owned());
-            play_or_pause(&mdp);
+            resp = Response::PlayOrPause;
         }
         Key::R => {
             resp = Response::Refresh;
@@ -82,12 +61,10 @@ pub fn handle_char(mdp: &MediaPlayer, ch_: i32) -> Response {
             resp = Response::Print(format!("Library: \n{}\n", &s));
         }
         Key::LessThan => {
-            let rate = speed_down(&mdp);
-            resp = Response::Print(format!("{:.*}\n", 2, rate,));
+            resp = Response::SpeedDown;
         }
         Key::GreaterThan => {
-            let rate = speed_up(&mdp);
-            resp = Response::Print(format!("{:.*}\n", 2, rate,));
+            resp = Response::SpeedUp;
         }
         _ => {
             Response::Print("press 'q' to quit\n".to_owned());

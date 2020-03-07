@@ -2,11 +2,12 @@ extern crate ncurses;
 extern crate vlc;
 
 mod controller;
+mod mediaplayer;
 
 static PROMPT_HISTORY_SIZE: usize = 5;
 
 use ncurses::*;
-use vlc::{Instance, Media, MediaPlayer};
+use std::sync::mpsc;
 
 use controller::Response;
 
@@ -23,16 +24,12 @@ q: quit
     );
 }
 
-fn mediaplayer() -> MediaPlayer {
-    let instance = Instance::new().unwrap();
-    let md = Media::new_path(
-        &instance,
-        "/home/lsund/Documents/git/tham/library/test.mp3",
-    )
-    .unwrap();
-    let mdp = MediaPlayer::new(&instance).unwrap();
-    mdp.set_media(&md);
-    return mdp;
+fn display_history(history: &Vec<String>, current_length: usize) {
+    let start_index =
+        history.len() - std::cmp::min(current_length, PROMPT_HISTORY_SIZE);
+    for item in &history[start_index..history.len()] {
+        addstr(&item);
+    }
 }
 
 fn init_ncurses() {
@@ -45,11 +42,14 @@ fn init_ncurses() {
 fn main() {
     init_ncurses();
     display_help();
-    let mdp = mediaplayer();
+
+    let (tx, rx) = mpsc::channel();
+    mediaplayer::init(rx);
+
     let mut vec = Vec::new();
-    let mut max_len = 0;
+    let mut current_length = 0;
     loop {
-        match controller::handle_char(&mdp, getch()) {
+        match controller::handle_char(getch()) {
             Response::Stop => {
                 break;
             }
@@ -57,20 +57,29 @@ fn main() {
             Response::Print(x) => {
                 addstr(&x);
                 vec.push(x);
-                max_len += 1;
+                current_length += 1;
             }
             Response::Refresh => {
                 clear();
                 display_help();
             }
+            Response::PlayOrPause => {
+                addstr("playing\n");
+                tx.send(Response::PlayOrPause).unwrap();
+            }
+            Response::SpeedUp => {
+                addstr("speed up\n");
+                tx.send(Response::SpeedUp).unwrap();
+            }
+            Response::SpeedDown => {
+                addstr("speed down\n");
+                tx.send(Response::SpeedDown).unwrap();
+            }
         }
         clear();
         display_help();
-        let start_index =
-            vec.len() - std::cmp::min(max_len, PROMPT_HISTORY_SIZE);
-        for x in &vec[start_index..vec.len()] {
-            addstr(&x);
-        }
+        // addstr(&format!("{}\n\n", mdp.get_time().unwrap()));
+        display_history(&vec, current_length);
     }
     endwin();
 }
