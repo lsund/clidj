@@ -1,18 +1,18 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 
-static LIBRARY_DIR: &str = "/home/lsund/Media/audio/library";
-
 pub struct Library {
-    content: HashMap<u32, String>,
+    pub content: BTreeMap<u32, String>,
+    load_index: Option<u32>,
 }
 
-pub fn make() -> Library {
+pub fn make(library_dir: &str) -> Library {
     let mut ret = Library {
-        content: HashMap::new(),
+        content: BTreeMap::new(),
+        load_index: None,
     };
     let mut i = 0;
-    for path in fs::read_dir(LIBRARY_DIR).unwrap() {
+    for path in fs::read_dir(library_dir).unwrap() {
         let x = path.unwrap().path().display().to_string();
         ret.content.insert(i, x);
         i += 1;
@@ -25,5 +25,9 @@ impl Library {
         return self.content.iter().fold("".to_owned(), |acc, (i, x)| {
             acc + &format!("{} {}\n", i, x)
         });
+    }
+
+    pub fn load(&mut self, x: u32) {
+        self.load_index = Some(x);
     }
 }

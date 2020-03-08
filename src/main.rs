@@ -1,15 +1,17 @@
 extern crate ncurses;
 extern crate vlc;
 
+mod application;
 mod controller;
 mod library;
 mod mediaplayer;
 mod prompt_history;
 
+use controller::AppCtrl;
 use ncurses::*;
 use std::sync::mpsc;
 
-use controller::Message;
+static LIBRARY_DIR: &str = "/home/lsund/Media/audio/library";
 
 fn display_help() {
     addstr(
@@ -35,49 +37,29 @@ fn main() {
     init_ncurses();
     display_help();
 
-    let (forward_mp_tx, forward_mp_rx) = mpsc::channel();
-    let (backward_mp_tx, backward_mp_rx) = mpsc::channel();
+    let (main_tx, mplayer_rx) = mpsc::channel();
+    let (mplayer_tx, main_rx) = mpsc::channel();
 
-    mediaplayer::init(backward_mp_tx, forward_mp_rx);
-
-    let mut hist = prompt_history::make();
+    let mut app = application::make(
+        LIBRARY_DIR,
+        main_tx,
+        main_rx,
+        mplayer_tx,
+        mplayer_rx,
+    );
     loop {
-        match controller::handle_char(getch()) {
-            Message::Stop => {
+        match controller::handle_char(getch(), &mut app) {
+            AppCtrl::Stop => {
                 break;
             }
-            Message::Continue => {}
-            Message::Print(x) => {
-                hist.update(x);
+            AppCtrl::Refresh => {
+                app.prompt_history.clear();
             }
-            Message::Refresh => {
-                hist.clear();
-            }
-            Message::PlayOrPause => {
-                hist.update("playing\n".to_owned());
-                forward_mp_tx.send(Message::PlayOrPause).unwrap();
-            }
-            Message::SpeedUp => {
-                hist.update("speed up\n".to_owned());
-                forward_mp_tx.send(Message::SpeedUp).unwrap();
-            }
-            Message::SpeedDown => {
-                hist.update("speed down\n".to_owned());
-                forward_mp_tx.send(Message::SpeedDown).unwrap();
-            }
-            Message::Meta => {
-                forward_mp_tx.send(Message::Meta).unwrap();
-                match backward_mp_rx.recv() {
-                    Ok(x) => {
-                        hist.update(format!("Meta: {}\n", x));
-                    }
-                    Err(_) => {}
-                }
-            }
+            _ => {}
         }
         clear();
         display_help();
-        hist.display();
+        app.prompt_history.display();
         // addstr(&format!("{}\n\n", mdp.get_time().unwrap()));
     }
     endwin();

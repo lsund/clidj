@@ -1,5 +1,5 @@
 use crate::controller;
-use controller::Message;
+use controller::MediaCtrl;
 use std::sync::mpsc;
 use std::thread;
 use vlc::{Instance, Media, MediaPlayer, Meta};
@@ -44,21 +44,21 @@ fn mediaplayer() -> MediaPlayer {
     return mdp;
 }
 
-pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<Message>) {
+pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
     thread::spawn(move || {
         let mdp = mediaplayer();
         loop {
             match rx.recv() {
-                Ok(Message::PlayOrPause) => {
+                Ok(MediaCtrl::PlayOrPause) => {
                     play_or_pause(&mdp);
                 }
-                Ok(Message::SpeedUp) => {
+                Ok(MediaCtrl::SpeedUp) => {
                     speed_up(&mdp);
                 }
-                Ok(Message::SpeedDown) => {
+                Ok(MediaCtrl::SpeedDown) => {
                     speed_down(&mdp);
                 }
-                Ok(Message::Meta) => match get_meta(&mdp) {
+                Ok(MediaCtrl::Meta) => match get_meta(&mdp) {
                     None => tx.send("Error".to_owned()).unwrap(),
                     Some(x) => tx.send(x).unwrap(),
                 },
