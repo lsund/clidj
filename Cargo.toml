@@ -1,5 +1,5 @@
 [package]
-name = "tham"
+name = "clidj"
 version = "0.1.0"
 authors = ["Ludvig Sundström <lud.sund@gmail.com>"]
 edition = "2018"

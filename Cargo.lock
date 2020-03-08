@@ -26,7 +26,7 @@ version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "tham"
+name = "clidj"
 version = "0.1.0"
 dependencies = [
  "ncurses 5.99.0 (registry+https://github.com/rust-lang/crates.io-index)",
