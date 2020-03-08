@@ -15,7 +15,7 @@ fn display_help() {
         "
 s: play music
 p: pause music
-l: list library
+d: list library
 q: quit
 <: slow down
 >: speed up
@@ -48,11 +48,9 @@ fn main() {
             Message::Continue => {}
             Message::Print(x) => {
                 hist.update(x);
-                // prompt_history::update(&mut hist, x);
             }
             Message::Refresh => {
-                clear();
-                display_help();
+                hist.clear();
             }
             Message::PlayOrPause => {
                 hist.update("playing\n".to_owned());

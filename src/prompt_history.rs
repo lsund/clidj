@@ -28,4 +28,8 @@ impl PromptHistory {
             addstr(&item);
         }
     }
+
+    pub fn clear(&mut self) {
+        self.content.clear();
+    }
 }
