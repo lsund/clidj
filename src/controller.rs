@@ -1,7 +1,6 @@
 extern crate vlc;
-use std::fs;
 
-static LIBRARY_DIR: &str = "/home/lsund/Media/audio/library";
+use crate::library;
 
 pub enum Message {
     Continue,
@@ -44,18 +43,6 @@ enum Key {
     GreaterThan,
     LessThan,
     Unknown,
-}
-
-fn list() -> String {
-    let y = fs::read_dir(LIBRARY_DIR).unwrap();
-    let mut foo = String::new();
-    let mut i = 0;
-    for path in y {
-        let x = &path.unwrap().path().display().to_string();
-        foo.push_str(&format!("{} {}\n", i, x));
-        i += 1;
-    }
-    return foo;
 }
 
 fn to_key(x: i32) -> Key {
@@ -105,7 +92,8 @@ pub fn handle_char(ch_: i32) -> Message {
             return Message::Refresh;
         }
         Key::D => {
-            let s = list();
+            let library = library::make();
+            let s = library.list();
             return Message::Print(format!("Library: \n{}\n", &s));
         }
         Key::LessThan => {

@@ -2,6 +2,7 @@ extern crate ncurses;
 extern crate vlc;
 
 mod controller;
+mod library;
 mod mediaplayer;
 mod prompt_history;
 

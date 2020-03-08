@@ -4,7 +4,7 @@ use std::cmp::min;
 static PROMPT_HISTORY_SIZE: usize = 5;
 
 pub struct PromptHistory {
-    pub content: Vec<String>,
+    content: Vec<String>,
 }
 
 pub fn make() -> PromptHistory {
