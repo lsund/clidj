@@ -69,6 +69,7 @@ fn to_key(x: i32) -> Key {
 
 pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
     let ch = to_key(ch_);
+    let mut resp = AppCtrl::Continue;
     match ch {
         Key::Num(0) => {
             app.library.load(0);
@@ -76,7 +77,6 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
                 "{} loaded into deck\n",
                 app.library.content.get(&0).unwrap()
             ));
-            return AppCtrl::Continue;
         }
         Key::Num(1) => {
             app.library.load(1);
@@ -84,12 +84,10 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
                 "{} loaded into deck\n",
                 app.library.content.get(&1).unwrap()
             ));
-            return AppCtrl::Continue;
         }
         Key::Letter('D') => {
             let s = app.library.list();
             app.prompt_history.update(format!("Library: \n{}\n", &s));
-            return AppCtrl::Continue;
         }
         Key::Letter('M') => {
             app.tx.send(MediaCtrl::Meta).unwrap();
@@ -99,31 +97,26 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
                 }
                 Err(_) => {}
             }
-            return AppCtrl::Continue;
         }
         Key::Letter('S') => {
             app.prompt_history.update("playing\n".to_owned());
             app.tx.send(MediaCtrl::PlayOrPause).unwrap();
-            return AppCtrl::Continue;
         }
         Key::LessThan => {
             app.prompt_history.update("speed down\n".to_owned());
             app.tx.send(MediaCtrl::SpeedDown).unwrap();
-            return AppCtrl::Continue;
         }
         Key::GreaterThan => {
             app.prompt_history.update("speed up\n".to_owned());
             app.tx.send(MediaCtrl::SpeedUp).unwrap();
-            return AppCtrl::Continue;
         }
         Key::Letter('Q') => {
-            return AppCtrl::Stop;
+            resp = AppCtrl::Stop;
         }
         Key::Letter('R') => {
-            return AppCtrl::Refresh;
+            resp = AppCtrl::Refresh;
         }
-        _ => {
-            return AppCtrl::Continue;
-        }
+        _ => {}
     }
+    return resp;
 }

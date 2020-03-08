@@ -37,16 +37,8 @@ fn main() {
     init_ncurses();
     display_help();
 
-    let (main_tx, mplayer_rx) = mpsc::channel();
-    let (mplayer_tx, main_rx) = mpsc::channel();
-
-    let mut app = application::make(
-        LIBRARY_DIR,
-        main_tx,
-        main_rx,
-        mplayer_tx,
-        mplayer_rx,
-    );
+    let mut app =
+        application::make(LIBRARY_DIR, mpsc::channel(), mpsc::channel());
     loop {
         match controller::handle_char(getch(), &mut app) {
             AppCtrl::Stop => {

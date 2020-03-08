@@ -62,7 +62,6 @@ pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
                     None => tx.send("Error".to_owned()).unwrap(),
                     Some(x) => tx.send(x).unwrap(),
                 },
-                Ok(_) => {}
                 Err(_) => {}
             }
         }
