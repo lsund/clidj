@@ -6,8 +6,26 @@ use vlc::{Instance, Media, MediaPlayer, Meta};
 
 static RATE_DELTA: f32 = 0.002;
 
-fn get_meta(mpd: &MediaPlayer) -> Option<String> {
-    return mpd.get_media().and_then(|m| m.get_meta(Meta::Genre));
+fn sequence(xs: Vec<Option<String>>) -> Option<Vec<String>> {
+    return xs.iter().fold(Some(Vec::new()), move |acc, z| match z {
+        Some(x) => {
+            let mut y: Vec<String> = acc.unwrap();
+            y.push(x.to_owned());
+            return Some(y);
+        }
+        None => None,
+    });
+}
+
+fn get_meta(mdp: &MediaPlayer) -> Option<String> {
+    return mdp.get_media().and_then(|m| {
+        sequence(vec![
+            m.get_meta(Meta::Title),
+            m.get_meta(Meta::Artist),
+            m.get_meta(Meta::Genre),
+        ])
+        .map(|ms| ms.join("\n"))
+    });
 }
 
 fn speed_up(mdp: &MediaPlayer) -> f32 {
@@ -58,13 +76,15 @@ pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
                 Ok(MediaCtrl::SpeedDown) => {
                     speed_down(&mdp);
                 }
-                Ok(MediaCtrl::Meta) => match get_meta(&mdp) {
-                    None => tx.send("Error".to_owned()).unwrap(),
-                    Some(x) => tx.send(x).unwrap(),
-                },
                 Ok(MediaCtrl::Load(x)) => {
                     mdp = mediaplayer(Some(x));
+                    mdp.get_media().map(|m| m.parse());
+                    match get_meta(&mdp) {
+                        None => tx.send("Error".to_owned()).unwrap(),
+                        Some(x) => tx.send(x).unwrap(),
+                    }
                 }
+                Ok(_) => {}
                 Err(_) => {}
             }
         }
