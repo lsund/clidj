@@ -1,7 +1,7 @@
 extern crate vlc;
 use std::fs;
 
-pub enum Response {
+pub enum Message {
     Continue,
     Stop,
     Print(String),
@@ -9,6 +9,7 @@ pub enum Response {
     PlayOrPause,
     SpeedDown,
     SpeedUp,
+    Meta,
 }
 
 enum Key {
@@ -16,6 +17,7 @@ enum Key {
     R,
     L,
     Q,
+    M,
     GreaterThan,
     LessThan,
     Unknown,
@@ -33,41 +35,46 @@ fn list() -> String {
 
 fn to_key(x: i32) -> Key {
     match x {
-        115 => Key::S,
-        114 => Key::R,
+        // 97 => Key::A,
         108 => Key::L,
+        109 => Key::M,
         113 => Key::Q,
+        114 => Key::R,
+        115 => Key::S,
         62 => Key::GreaterThan,
         60 => Key::LessThan,
         _ => Key::Unknown,
     }
 }
 
-pub fn handle_char(ch_: i32) -> Response {
+pub fn handle_char(ch_: i32) -> Message {
     let ch = to_key(ch_);
-    let mut resp = Response::Continue;
+    let mut resp = Message::Continue;
     match ch {
         Key::Q => {
-            resp = Response::Stop;
+            resp = Message::Stop;
         }
         Key::S => {
-            resp = Response::PlayOrPause;
+            resp = Message::PlayOrPause;
         }
         Key::R => {
-            resp = Response::Refresh;
+            resp = Message::Refresh;
         }
         Key::L => {
             let s = list();
-            resp = Response::Print(format!("Library: \n{}\n", &s));
+            resp = Message::Print(format!("Library: \n{}\n", &s));
         }
         Key::LessThan => {
-            resp = Response::SpeedDown;
+            resp = Message::SpeedDown;
         }
         Key::GreaterThan => {
-            resp = Response::SpeedUp;
+            resp = Message::SpeedUp;
+        }
+        Key::M => {
+            resp = Message::Meta;
         }
         _ => {
-            Response::Print("press 'q' to quit\n".to_owned());
+            Message::Print("press 'q' to quit\n".to_owned());
         }
     }
     return resp;

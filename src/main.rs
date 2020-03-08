@@ -3,13 +3,12 @@ extern crate vlc;
 
 mod controller;
 mod mediaplayer;
-
-static PROMPT_HISTORY_SIZE: usize = 5;
+mod prompt_history;
 
 use ncurses::*;
 use std::sync::mpsc;
 
-use controller::Response;
+use controller::Message;
 
 fn display_help() {
     addstr(
@@ -24,14 +23,6 @@ q: quit
     );
 }
 
-fn display_history(history: &Vec<String>, current_length: usize) {
-    let start_index =
-        history.len() - std::cmp::min(current_length, PROMPT_HISTORY_SIZE);
-    for item in &history[start_index..history.len()] {
-        addstr(&item);
-    }
-}
-
 fn init_ncurses() {
     initscr();
     raw();
@@ -43,43 +34,52 @@ fn main() {
     init_ncurses();
     display_help();
 
-    let (tx, rx) = mpsc::channel();
-    mediaplayer::init(rx);
+    let (forward_mp_tx, forward_mp_rx) = mpsc::channel();
+    let (backward_mp_tx, backward_mp_rx) = mpsc::channel();
 
-    let mut vec = Vec::new();
-    let mut current_length = 0;
+    mediaplayer::init(backward_mp_tx, forward_mp_rx);
+
+    let mut hist = prompt_history::make();
     loop {
         match controller::handle_char(getch()) {
-            Response::Stop => {
+            Message::Stop => {
                 break;
             }
-            Response::Continue => {}
-            Response::Print(x) => {
-                addstr(&x);
-                vec.push(x);
-                current_length += 1;
+            Message::Continue => {}
+            Message::Print(x) => {
+                hist.update(x);
+                // prompt_history::update(&mut hist, x);
             }
-            Response::Refresh => {
+            Message::Refresh => {
                 clear();
                 display_help();
             }
-            Response::PlayOrPause => {
-                addstr("playing\n");
-                tx.send(Response::PlayOrPause).unwrap();
+            Message::PlayOrPause => {
+                hist.update("playing\n".to_owned());
+                forward_mp_tx.send(Message::PlayOrPause).unwrap();
             }
-            Response::SpeedUp => {
-                addstr("speed up\n");
-                tx.send(Response::SpeedUp).unwrap();
+            Message::SpeedUp => {
+                hist.update("speed up\n".to_owned());
+                forward_mp_tx.send(Message::SpeedUp).unwrap();
             }
-            Response::SpeedDown => {
-                addstr("speed down\n");
-                tx.send(Response::SpeedDown).unwrap();
+            Message::SpeedDown => {
+                hist.update("speed down\n".to_owned());
+                forward_mp_tx.send(Message::SpeedDown).unwrap();
+            }
+            Message::Meta => {
+                forward_mp_tx.send(Message::Meta).unwrap();
+                match backward_mp_rx.recv() {
+                    Ok(x) => {
+                        hist.update(format!("Meta: {}\n", x));
+                    }
+                    Err(_) => {}
+                }
             }
         }
         clear();
         display_help();
+        hist.display();
         // addstr(&format!("{}\n\n", mdp.get_time().unwrap()));
-        display_history(&vec, current_length);
     }
     endwin();
 }

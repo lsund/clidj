@@ -1,18 +1,25 @@
 use crate::controller;
-use controller::Response;
+use controller::Message;
+use std::sync::mpsc;
 use std::thread;
-use vlc::{Instance, Media, MediaPlayer};
+use vlc::{Instance, Media, MediaPlayer, Meta};
+
+static RATE_DELTA: f32 = 0.002;
+
+fn get_meta(mpd: &MediaPlayer) -> Option<String> {
+    return mpd.get_media().and_then(|m| m.get_meta(Meta::Genre));
+}
 
 fn speed_up(mdp: &MediaPlayer) -> f32 {
     let rate = mdp.get_rate();
-    let rate_ = rate + 0.01;
+    let rate_ = rate + RATE_DELTA;
     let _ = mdp.set_rate(rate_);
     return rate_;
 }
 
 fn speed_down(mdp: &MediaPlayer) -> f32 {
     let rate = mdp.get_rate();
-    let rate_ = rate - 0.01;
+    let rate_ = rate - RATE_DELTA;
     let _ = mdp.set_rate(rate_);
     return rate_;
 }
@@ -37,20 +44,24 @@ fn mediaplayer() -> MediaPlayer {
     return mdp;
 }
 
-pub fn init(rx: std::sync::mpsc::Receiver<Response>) {
+pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<Message>) {
     thread::spawn(move || {
         let mdp = mediaplayer();
         loop {
             match rx.recv() {
-                Ok(Response::PlayOrPause) => {
+                Ok(Message::PlayOrPause) => {
                     play_or_pause(&mdp);
                 }
-                Ok(Response::SpeedUp) => {
+                Ok(Message::SpeedUp) => {
                     speed_up(&mdp);
                 }
-                Ok(Response::SpeedDown) => {
+                Ok(Message::SpeedDown) => {
                     speed_down(&mdp);
                 }
+                Ok(Message::Meta) => match get_meta(&mdp) {
+                    None => tx.send("Error".to_owned()).unwrap(),
+                    Some(x) => tx.send(x).unwrap(),
+                },
                 Ok(_) => {}
                 Err(_) => {}
             }
