@@ -25,28 +25,28 @@ fn speed_down(mdp: &MediaPlayer) -> f32 {
 }
 
 fn play_or_pause(mdp: &MediaPlayer) {
-    if mdp.is_playing() {
-        mdp.pause();
-    } else {
-        mdp.play().unwrap();
-    }
+    mdp.get_media().map(|_| {
+        if mdp.is_playing() {
+            mdp.pause();
+        } else {
+            mdp.play().unwrap();
+        }
+    });
 }
 
-fn mediaplayer() -> MediaPlayer {
+fn mediaplayer(mpath: Option<String>) -> MediaPlayer {
     let instance = Instance::new().unwrap();
-    let md = Media::new_path(
-        &instance,
-        "/home/lsund/Documents/git/tham/library/test.mp3",
-    )
-    .unwrap();
     let mdp = MediaPlayer::new(&instance).unwrap();
-    mdp.set_media(&md);
+    mpath.map(|path| {
+        let md = Media::new_path(&instance, path).unwrap();
+        mdp.set_media(&md);
+    });
     return mdp;
 }
 
 pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
     thread::spawn(move || {
-        let mdp = mediaplayer();
+        let mut mdp = mediaplayer(None);
         loop {
             match rx.recv() {
                 Ok(MediaCtrl::PlayOrPause) => {
@@ -62,6 +62,9 @@ pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
                     None => tx.send("Error".to_owned()).unwrap(),
                     Some(x) => tx.send(x).unwrap(),
                 },
+                Ok(MediaCtrl::Load(x)) => {
+                    mdp = mediaplayer(Some(x));
+                }
                 Err(_) => {}
             }
         }

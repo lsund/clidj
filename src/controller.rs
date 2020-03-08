@@ -13,6 +13,7 @@ pub enum MediaCtrl {
     SpeedDown,
     SpeedUp,
     Meta,
+    Load(String),
 }
 
 enum Key {
@@ -71,19 +72,12 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
     let ch = to_key(ch_);
     let mut resp = AppCtrl::Continue;
     match ch {
-        Key::Num(0) => {
-            app.library.load(0);
-            app.prompt_history.update(format!(
-                "{} loaded into deck\n",
-                app.library.content.get(&0).unwrap()
-            ));
-        }
-        Key::Num(1) => {
-            app.library.load(1);
-            app.prompt_history.update(format!(
-                "{} loaded into deck\n",
-                app.library.content.get(&1).unwrap()
-            ));
+        Key::Num(x) => {
+            app.library.load(x);
+            let path: String = app.library.content.get(&x).unwrap().to_owned();
+            app.prompt_history
+                .update(format!("{} loaded into deck\n", path));
+            app.tx.send(MediaCtrl::Load(path)).unwrap();
         }
         Key::Letter('D') => {
             let s = app.library.list();
@@ -99,7 +93,7 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
             }
         }
         Key::Letter('S') => {
-            app.prompt_history.update("playing\n".to_owned());
+            // app.prompt_history.update("playing\n".to_owned());
             app.tx.send(MediaCtrl::PlayOrPause).unwrap();
         }
         Key::LessThan => {
