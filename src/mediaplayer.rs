@@ -1,7 +1,10 @@
 use crate::controller;
 use controller::MediaCtrl;
+use std::fs::File;
+use std::io::prelude::*;
 use std::sync::mpsc;
 use std::thread;
+use vlc::sys;
 use vlc::{Instance, Media, MediaPlayer, Meta};
 
 static RATE_DELTA: f32 = 0.002;
@@ -62,16 +65,56 @@ fn mediaplayer(mpath: Option<String>) -> MediaPlayer {
     return mdp;
 }
 
+fn make_equalizer() -> *mut sys::libvlc_equalizer_t {
+    unsafe {
+        let eq = sys::libvlc_audio_equalizer_new();
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 0);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 1);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 2);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 3);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 4);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 5);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 6);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 7);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 8);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 9);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 10);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 11);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 12);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 13);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 14);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 15);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 16);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 17);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, 10.0, 18);
+        return eq;
+    }
+}
+
+fn apply_equalizer(
+    mdp: &MediaPlayer,
+    eq: *mut sys::libvlc_equalizer_t,
+) -> *mut sys::libvlc_equalizer_t {
+    unsafe {
+        let x = sys::libvlc_audio_equalizer_get_amp_at_index(eq, 0);
+        sys::libvlc_audio_equalizer_set_amp_at_index(eq, x + 1.0, 0);
+        sys::libvlc_media_player_set_equalizer(mdp.raw(), eq);
+    }
+    return eq;
+}
+
 pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
     thread::spawn(move || {
         let mut mdp = mediaplayer(None);
+        let mut eq = make_equalizer();
         loop {
             match rx.recv() {
                 Ok(MediaCtrl::PlayOrPause) => {
                     play_or_pause(&mdp);
                 }
                 Ok(MediaCtrl::SpeedUp) => {
-                    speed_up(&mdp);
+                    eq = apply_equalizer(&mdp, eq);
+                    // speed_up(&mdp);
                 }
                 Ok(MediaCtrl::SpeedDown) => {
                     speed_down(&mdp);
@@ -84,7 +127,6 @@ pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
                         Some(x) => tx.send(x).unwrap(),
                     }
                 }
-                Ok(_) => {}
                 Err(_) => {}
             }
         }
