@@ -9,6 +9,7 @@ mod prompt_history;
 
 use controller::AppCtrl;
 use ncurses::*;
+use std::fs;
 use std::sync::mpsc;
 
 static LIBRARY_DIR: &str = "/home/lsund/Media/audio/library";
@@ -37,8 +38,9 @@ fn main() {
     init_ncurses();
     display_help();
 
-    let mut app =
-        application::make(LIBRARY_DIR, mpsc::channel(), mpsc::channel());
+    let _ = fs::create_dir_all(LIBRARY_DIR);
+
+    let mut app = application::make(LIBRARY_DIR, mpsc::channel(), mpsc::channel());
     loop {
         match controller::handle_char(getch(), &mut app) {
             AppCtrl::Stop => {
