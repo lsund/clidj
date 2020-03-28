@@ -67,36 +67,52 @@ fn to_key(x: i32) -> Key {
     }
 }
 
+fn dispatch(msg: MediaCtrl, app: &mut Application) {
+    match app.tx.send(msg) {
+        Err(_) => app.log("Internal Error".to_owned()),
+        _ => {}
+    }
+}
+
+fn receive(app: &mut Application) {
+    match app.rx.recv() {
+        Ok(data) => {
+            app.log(format!("{}\n", data));
+        }
+        Err(_) => {}
+    }
+}
+
 pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
     let ch = to_key(ch_);
     let mut resp = AppCtrl::Continue;
     match ch {
         Key::Num(x) => {
             app.library.load(x);
-            let path: String = app.library.content.get(&x).unwrap().to_owned();
-            app.prompt_history.update(format!("Loaded track\n\n"));
-            app.tx.send(MediaCtrl::Load(path)).unwrap();
-            match app.rx.recv() {
-                Ok(x) => {
-                    app.prompt_history.update(format!("{}\n", x));
+            match app.get_song(&x) {
+                Some(path) => {
+                    dispatch(MediaCtrl::Load(path.to_owned()), app);
+                    receive(app)
                 }
-                Err(_) => {}
+                None => {
+                    app.log(format!("Could not load song\n"));
+                }
             }
         }
         Key::Letter('D') => {
             let s = app.library.list();
-            app.prompt_history.update(format!("Library: \n{}\n", &s));
+            app.log(format!("Library: \n{}\n", &s));
         }
         Key::Letter('S') => {
-            app.tx.send(MediaCtrl::PlayOrPause).unwrap();
+            dispatch(MediaCtrl::PlayOrPause, app);
         }
         Key::LessThan => {
-            app.prompt_history.update("speed down\n".to_owned());
-            app.tx.send(MediaCtrl::SpeedDown).unwrap();
+            app.log("speed down\n".to_owned());
+            dispatch(MediaCtrl::SpeedDown, app);
         }
         Key::GreaterThan => {
-            app.prompt_history.update("speed up\n".to_owned());
-            app.tx.send(MediaCtrl::SpeedUp).unwrap();
+            app.log("speed up\n".to_owned());
+            dispatch(MediaCtrl::SpeedUp, app);
         }
         Key::Letter('Q') => {
             resp = AppCtrl::Stop;

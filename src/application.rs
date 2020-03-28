@@ -29,3 +29,12 @@ pub fn make(
         rx: app_rx,
     };
 }
+impl Application {
+    pub fn log(&mut self, msg: String) {
+        self.prompt_history.update(msg)
+    }
+
+    pub fn get_song(&self, x: &u32) -> Option<&String> {
+        return self.library.content.get(&x);
+    }
+}
