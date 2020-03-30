@@ -1,11 +1,17 @@
-use crate::controller;
-use controller::MediaCtrl;
 use std::sync::mpsc;
 use std::thread;
 use vlc::sys;
 use vlc::{Instance, Media, MediaPlayer, Meta};
 
 static RATE_DELTA: f32 = 0.002;
+
+pub enum MediaCtrl {
+    PlayOrPause,
+    SpeedDown,
+    SpeedUp,
+    BassDown,
+    Load(String),
+}
 
 fn sequence(xs: Vec<Option<String>>) -> Option<Vec<String>> {
     return xs.iter().fold(Some(Vec::new()), move |acc, z| match z {
@@ -96,11 +102,14 @@ pub fn init(tx: mpsc::Sender<String>, rx: mpsc::Receiver<MediaCtrl>) {
                     play_or_pause(&mdp);
                 }
                 Ok(MediaCtrl::SpeedUp) => {
-                    eq = apply_equalizer(&mdp, eq);
-                    // speed_up(&mdp);
+                    speed_up(&mdp);
                 }
                 Ok(MediaCtrl::SpeedDown) => {
                     speed_down(&mdp);
+                }
+                Ok(MediaCtrl::BassDown) => {
+                    eq = apply_equalizer(&mdp, eq);
+                    apply_equalizer(&mdp, eq);
                 }
                 Ok(MediaCtrl::Load(path)) => {
                     mdp = mediaplayer(Some(path));

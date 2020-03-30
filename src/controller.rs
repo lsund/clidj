@@ -1,6 +1,11 @@
 extern crate vlc;
 
 use crate::application::Application;
+use crate::mediaplayer::MediaCtrl;
+
+pub struct Controller {
+    active_control: PlaybackCtrl,
+}
 
 pub enum AppCtrl {
     Continue,
@@ -8,11 +13,9 @@ pub enum AppCtrl {
     Refresh,
 }
 
-pub enum MediaCtrl {
-    PlayOrPause,
-    SpeedDown,
-    SpeedUp,
-    Load(String),
+enum PlaybackCtrl {
+    Tempo,
+    Bass,
 }
 
 enum Key {
@@ -21,6 +24,12 @@ enum Key {
     GreaterThan,
     LessThan,
     Unknown,
+}
+
+pub fn make() -> Controller {
+    return Controller {
+        active_control: PlaybackCtrl::Tempo,
+    };
 }
 
 fn to_key(x: i32) -> Key {
@@ -106,10 +115,17 @@ pub fn handle_char(ch_: i32, app: &mut Application) -> AppCtrl {
         Key::Letter('S') => {
             dispatch(MediaCtrl::PlayOrPause, app);
         }
-        Key::LessThan => {
-            app.log("speed down\n".to_owned());
-            dispatch(MediaCtrl::SpeedDown, app);
-        }
+        Key::Letter('B') => app.controller.active_control = PlaybackCtrl::Bass,
+        Key::LessThan => match app.controller.active_control {
+            PlaybackCtrl::Tempo => {
+                app.log("speed down\n".to_owned());
+                dispatch(MediaCtrl::SpeedDown, app);
+            }
+            PlaybackCtrl::Bass => {
+                app.log("bass down\n".to_owned());
+                dispatch(MediaCtrl::BassDown, app)
+            }
+        },
         Key::GreaterThan => {
             app.log("speed up\n".to_owned());
             dispatch(MediaCtrl::SpeedUp, app);
